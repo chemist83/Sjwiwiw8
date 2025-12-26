@@ -163,18 +163,15 @@
         <div id="ki-box" class="canvas-3d"></div>
     </div>
 
-    <script>
+        <script>
     // --- CORE 3D ENGINE ---
     function renderMolecule(id, atoms, bonds, isIonic = false, zoom = 5) {
         const el = document.getElementById(id);
-        if(!el) {
-            console.warn("Skipping " + id + " - element not found.");
-            return;
-        }
+        if(!el) return;
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(50, el.clientWidth/el.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         
         renderer.setSize(el.clientWidth, el.clientHeight);
         renderer.setClearColor(0x808080);
@@ -218,48 +215,30 @@
         anim();
     }
 
-    // --- FORCED DELAY LOAD ---
+    // --- DATA AND QUEUE SYSTEM ---
     window.onload = function() {
-        // We wait 100 milliseconds to be absolutely sure the DOM is ready
-        setTimeout(() => {
-            // 1. HCl
-            renderMolecule('hcl-box', [{c:0xff0000, s:0.7, x:-0.6, y:0, z:0}, {c:0x00ff00, s:0.4, x:0.6, y:0, z:0}], [{f:0, t:1}]);
+        const molData = [
+            {id: 'hcl-box', a: [{c:0xff0000, s:0.7, x:-0.6, y:0, z:0}, {c:0x00ff00, s:0.4, x:0.6, y:0, z:0}], b: [{f:0, t:1}], i: false, z: 5},
+            {id: 'h2o-box', a: [{c:0x00ff00, s:0.6, x:0, y:0.3, z:0}, {c:0x0000ff, s:0.4, x:-0.6, y:-0.4, z:0}, {c:0x0000ff, s:0.4, x:0.6, y:-0.4, z:0}], b: [{f:0, t:1}, {f:0, t:2}], i: false, z: 5},
+            {id: 'glucose-box', a: [{c:0x333333,s:0.5,x:1,y:0,z:0},{c:0x333333,s:0.5,x:0.5,y:0.8,z:0.5},{c:0x333333,s:0.5,x:-0.5,y:0.8,z:0.5},{c:0x333333,s:0.5,x:-1,y:0,z:0},{c:0x333333,s:0.5,x:-0.5,y:-0.8,z:-0.5},{c:0x333333,s:0.5,x:0.5,y:-0.8,z:-0.5},{c:0xff0000,s:0.4,x:1.8,y:0,z:0},{c:0xff0000,s:0.4,x:1,y:1.5,z:1},{c:0xff0000,s:0.4,x:-1,y:1.5,z:1},{c:0xff0000,s:0.4,x:-1.8,y:0,z:0},{c:0xff0000,s:0.4,x:-1,y:-1.5,z:-1},{c:0xff0000,s:0.4,x:1,y:-1.5,z:-1},{c:0xeeeeee,s:0.2,x:1,y:0.5,z:-0.5},{c:0xeeeeee,s:0.2,x:2.5,y:0.5,z:0},{c:0xeeeeee,s:0.2,x:0.5,y:1.2,z:-0.2},{c:0xeeeeee,s:0.2,x:1.5,y:2,z:1},{c:0xeeeeee,s:0.2,x:-0.5,y:1.2,z:-0.2},{c:0xeeeeee,s:0.2,x:-1.5,y:2,z:1},{c:0xeeeeee,s:0.2,x:-1,y:0.5,z:0.5},{c:0xeeeeee,s:0.2,x:-2.5,y:0.5,z:0},{c:0xeeeeee,s:0.2,x:-0.5,y:-1.2,z:0.2},{c:0xeeeeee,s:0.2,x:-1.5,y:-2,z:-1},{c:0xeeeeee,s:0.2,x:0.5,y:-1.2,z:0.2},{c:0xeeeeee,s:0.2,x:1.5,y:-2,z:-1}], b: [{f:0,t:1},{f:1,t:2},{f:2,t:3},{f:3,t:4},{f:4,t:5},{f:5,t:0}], i: false, z: 8},
+            {id: 'nacl-box', a: [{c:0x8A2BE2,s:0.65,x:-0.6,y:0.6,z:0.6},{c:0x00ff00,s:0.65,x:0.6,y:0.6,z:0.6},{c:0x00ff00,s:0.65,x:-0.6,y:-0.6,z:0.6},{c:0x8A2BE2,s:0.65,x:0.6,y:-0.6,z:0.6},{c:0x00ff00,s:0.65,x:-0.6,y:0.6,z:-0.6},{c:0x8A2BE2,s:0.65,x:0.6,y:0.6,z:-0.6},{c:0x8A2BE2,s:0.65,x:-0.6,y:-0.6,z:-0.6},{c:0x00ff00,s:0.65,x:0.6,y:-0.6,z:-0.6}], b: [], i: true, z: 5},
+            {id: 'ethanol-box', a: [{c:0x333333,s:0.5,x:-0.7,y:0,z:0},{c:0x333333,s:0.5,x:0.7,y:0,z:0},{c:0xff0000,s:0.45,x:1.5,y:0.7,z:0},{c:0xeeeeee,s:0.25,x:2.1,y:0.3,z:0},{c:0xeeeeee,s:0.25,x:-1.2,y:0.7,z:0.5},{c:0xeeeeee,s:0.25,x:-1.2,y:-0.7,z:-0.5},{c:0xeeeeee,s:0.25,x:-1.2,y:0,z:-1},{c:0xeeeeee,s:0.25,x:0.7,y:-0.8,z:0.5},{c:0xeeeeee,s:0.25,x:0.7,y:0.8,z:-0.5}], b: [{f:0,t:1},{f:1,t:2},{f:2,t:3},{f:0,t:4},{f:0,t:5},{f:0,t:6},{f:1,t:7},{f:1,t:8}], i: false, z: 5},
+            {id: 'naoh-box', a: [{c:0x8A2BE2, s:0.65, x:-0.6, y:0, z:0}, {c:0xff0000, s:0.65, x:0.6, y:0, z:0}, {c:0xeeeeee, s:0.35, x:1.3, y:0, z:0}], b: [{f:1, t:2}], i: false, z: 5},
+            {id: 'h2so4-box', a: [{c:0xffff00,s:0.65,x:0,y:0,z:0},{c:0xff0000,s:0.5,x:0,y:1.2,z:0},{c:0xff0000,s:0.5,x:0,y:-1.2,z:0},{c:0xff0000,s:0.5,x:1.1,y:0,z:0.5},{c:0xff0000,s:0.5,x:-1.1,y:0,z:-0.5},{c:0xeeeeee,s:0.25,x:1.6,y:0.6,z:0.5},{c:0xeeeeee,s:0.25,x:-1.6,y:-0.6,z:-0.5}], b: [{f:0,t:1},{f:0,t:2},{f:0,t:3},{f:0,t:4},{f:3,t:5},{f:4,t:6}], i: false, z: 7},
+            {id: 'koh-box', a: [{c:0xc381fd, s:0.7, x:-0.7, y:0, z:0}, {c:0xff0000, s:0.65, x:0.7, y:0, z:0}, {c:0xeeeeee, s:0.35, x:1.4, y:0, z:0}], b: [{f:1, t:2}], i: false, z: 5},
+            {id: 'hno3-box', a: [{c:0x0000ff,s:0.55,x:0,y:0,z:0},{c:0xff0000,s:0.5,x:0,y:1.2,z:0},{c:0xff0000,s:0.5,x:1.1,y:-0.6,z:0},{c:0xff0000,s:0.5,x:-1.1,y:-0.6,z:0},{c:0xeeeeee,s:0.25,x:-1.8,y:-0.2,z:0}], b: [{f:0,t:1},{f:0,t:2},{f:0,t:3},{f:3,t:4}], i: false, z: 6},
+            {id: 'ki-box', a: [{c:0xffff00,s:0.65,x:-0.65,y:0.65,z:0.65},{c:0x4b0082,s:0.65,x:0.65,y:0.65,z:0.65},{c:0x4b0082,s:0.65,x:-0.65,y:-0.65,z:0.65},{c:0xffff00,s:0.65,x:0.65,y:-0.65,z:0.65},{c:0x4b0082,s:0.65,x:-0.65,y:0.65,z:-0.65},{c:0xffff00,s:0.65,x:0.65,y:0.65,z:-0.65},{c:0xffff00,s:0.65,x:-0.65,y:-0.65,z:-0.65},{c:0x4b0082,s:0.65,x:0.65,y:-0.65,z:-0.65}], b: [], i: true, z: 5}
+        ];
 
-            // 2. H2O
-            renderMolecule('h2o-box', [{c:0x00ff00, s:0.6, x:0, y:0.3, z:0}, {c:0x0000ff, s:0.4, x:-0.6, y:-0.4, z:0}, {c:0x0000ff, s:0.4, x:0.6, y:-0.4, z:0}], [{f:0, t:1}, {f:0, t:2}]);
-
-            // 3. Glucose
-            const gA = [{c:0x333333,s:0.5,x:1,y:0,z:0},{c:0x333333,s:0.5,x:0.5,y:0.8,z:0.5},{c:0x333333,s:0.5,x:-0.5,y:0.8,z:0.5},{c:0x333333,s:0.5,x:-1,y:0,z:0},{c:0x333333,s:0.5,x:-0.5,y:-0.8,z:-0.5},{c:0x333333,s:0.5,x:0.5,y:-0.8,z:-0.5},{c:0xff0000,s:0.4,x:1.8,y:0,z:0},{c:0xff0000,s:0.4,x:1,y:1.5,z:1},{c:0xff0000,s:0.4,x:-1,y:1.5,z:1},{c:0xff0000,s:0.4,x:-1.8,y:0,z:0},{c:0xff0000,s:0.4,x:-1,y:-1.5,z:-1},{c:0xff0000,s:0.4,x:1,y:-1.5,z:-1},{c:0xeeeeee,s:0.2,x:1,y:0.5,z:-0.5},{c:0xeeeeee,s:0.2,x:2.5,y:0.5,z:0},{c:0xeeeeee,s:0.2,x:0.5,y:1.2,z:-0.2},{c:0xeeeeee,s:0.2,x:1.5,y:2,z:1},{c:0xeeeeee,s:0.2,x:-0.5,y:1.2,z:-0.2},{c:0xeeeeee,s:0.2,x:-1.5,y:2,z:1},{c:0xeeeeee,s:0.2,x:-1,y:0.5,z:0.5},{c:0xeeeeee,s:0.2,x:-2.5,y:0.5,z:0},{c:0xeeeeee,s:0.2,x:-0.5,y:-1.2,z:0.2},{c:0xeeeeee,s:0.2,x:-1.5,y:-2,z:-1},{c:0xeeeeee,s:0.2,x:0.5,y:-1.2,z:0.2},{c:0xeeeeee,s:0.2,x:1.5,y:-2,z:-1}];
-            renderMolecule('glucose-box', gA, [{f:0,t:1},{f:1,t:2},{f:2,t:3},{f:3,t:4},{f:4,t:5},{f:5,t:0}], false, 8);
-
-            // 4. NaCl
-            const nA = [{c:0x8A2BE2,s:0.65,x:-0.6,y:0.6,z:0.6},{c:0x00ff00,s:0.65,x:0.6,y:0.6,z:0.6},{c:0x00ff00,s:0.65,x:-0.6,y:-0.6,z:0.6},{c:0x8A2BE2,s:0.65,x:0.6,y:-0.6,z:0.6},{c:0x00ff00,s:0.65,x:-0.6,y:0.6,z:-0.6},{c:0x8A2BE2,s:0.65,x:0.6,y:0.6,z:-0.6},{c:0x8A2BE2,s:0.65,x:-0.6,y:-0.6,z:-0.6},{c:0x00ff00,s:0.65,x:0.6,y:-0.6,z:0.6}];
-            renderMolecule('nacl-box', nA, [], true, 5);
-
-            // 5. Ethanol
-            const eA = [{c:0x333333,s:0.5,x:-0.7,y:0,z:0},{c:0x333333,s:0.5,x:0.7,y:0,z:0},{c:0xff0000,s:0.45,x:1.5,y:0.7,z:0},{c:0xeeeeee,s:0.25,x:2.1,y:0.3,z:0},{c:0xeeeeee,s:0.25,x:-1.2,y:0.7,z:0.5},{c:0xeeeeee,s:0.25,x:-1.2,y:-0.7,z:-0.5},{c:0xeeeeee,s:0.25,x:-1.2,y:0,z:-1},{c:0xeeeeee,s:0.25,x:0.7,y:-0.8,z:0.5},{c:0xeeeeee,s:0.25,x:0.7,y:0.8,z:-0.5}];
-            renderMolecule('ethanol-box', eA, [{f:0,t:1},{f:1,t:2},{f:2,t:3},{f:0,t:4},{f:0,t:5},{f:0,t:6},{f:1,t:7},{f:1,t:8}]);
-
-            // 6. NaOH
-            renderMolecule('naoh-box', [{c:0x8A2BE2, s:0.65, x:-0.6, y:0, z:0}, {c:0xff0000, s:0.65, x:0.6, y:0, z:0}, {c:0xeeeeee, s:0.35, x:1.3, y:0, z:0}], [{f:1, t:2}], false, 5);
-
-            // 7. Sulfuric Acid
-            renderMolecule('h2so4-box', [{c:0xffff00,s:0.65,x:0,y:0,z:0},{c:0xff0000,s:0.5,x:0,y:1.2,z:0},{c:0xff0000,s:0.5,x:0,y:-1.2,z:0},{c:0xff0000,s:0.5,x:1.1,y:0,z:0.5},{c:0xff0000,s:0.5,x:-1.1,y:0,z:-0.5},{c:0xeeeeee,s:0.25,x:1.6,y:0.6,z:0.5},{c:0xeeeeee,s:0.25,x:-1.6,y:-0.6,z:-0.5}], [{f:0,t:1},{f:0,t:2},{f:0,t:3},{f:0,t:4},{f:3,t:5},{f:4,t:6}], false, 7);
-
-            // 8. KOH
-            renderMolecule('koh-box', [{c:0xc381fd, s:0.7, x:-0.7, y:0, z:0}, {c:0xff0000, s:0.65, x:0.7, y:0, z:0}, {c:0xeeeeee, s:0.35, x:1.4, y:0, z:0}], [{f:1, t:2}], false, 5);
-
-            // 9. Nitric Acid
-            renderMolecule('hno3-box', [{c:0x0000ff,s:0.55,x:0,y:0,z:0},{c:0xff0000,s:0.5,x:0,y:1.2,z:0},{c:0xff0000,s:0.5,x:1.1,y:-0.6,z:0},{c:0xff0000,s:0.5,x:-1.1,y:-0.6,z:0},{c:0xeeeeee,s:0.25,x:-1.8,y:-0.2,z:0}], [{f:0,t:1},{f:0,t:2},{f:0,t:3},{f:3,t:4}], false, 6);
-
-            // 10. Potassium Iodide (KI)
-            const kiSize = 0.65;
-            const kiAtoms = [{c:0xffff00,s:kiSize,x:-0.65,y:0.65,z:0.65},{c:0x4b0082,s:kiSize,x:0.65,y:0.65,z:0.65},{c:0x4b0082,s:kiSize,x:-0.65,y:-0.65,z:0.65},{c:0xffff00,s:kiSize,x:0.65,y:-0.65,z:0.65},{c:0x4b0082,s:kiSize,x:-0.65,y:0.65,z:-0.65},{c:0xffff00,s:kiSize,x:0.65,y:0.65,z:-0.65},{c:0xffff00,s:kiSize,x:-0.65,y:-0.65,z:-0.65},{c:0x4b0082,s:kiSize,x:0.65,y:-0.65,z:-0.65}];
-            renderMolecule('ki-box', kiAtoms, [], true, 5);
-        }, 100);
+        // Renders each molecule one by one with a small delay
+        molData.forEach((mol, index) => {
+            setTimeout(() => {
+                renderMolecule(mol.id, mol.a, mol.b, mol.i, mol.z);
+            }, index * 80); // 80ms gap between each molecule load
+        });
     };
 
     function searchMolecule() { alert("Search: " + document.getElementById('mol-search').value); }
-    </script>
+        </script>
  </body>
 </html>

@@ -44,6 +44,12 @@
         <div id="glucose-container" class="viewer-3d"></div>
     </div>
 
+<div class="molecule-section">
+    <div class="label">NaCl (Sodium Chloride)</div>
+    <div class="knowledge-box"></div>
+    <div id="nacl-canvas" class="viewer-3d"></div>
+</div>
+    
     <script>
         function create3D(id, atoms, bonds) {
             const el = document.getElementById(id);
@@ -116,7 +122,28 @@
             {f:3,t:18},{f:9,t:19},{f:4,t:20},{f:10,t:21},{f:5,t:22},{f:11,t:23}
         ];
         create3D('glucose-container', gA, gB);
+      // --- NaCl Data (Cubic Lattice Structure) ---
+        const naclAtoms = [
+            // Front face
+            {c:0x8A2BE2, s:0.45, x:-0.8, y:0.8, z:0.8},  // Na (Purple)
+            {c:0x00ff00, s:0.6,  x:0.8,  y:0.8, z:0.8},  // Cl (Green)
+            {c:0x00ff00, s:0.6,  x:-0.8, y:-0.8, z:0.8}, // Cl
+            {c:0x8A2BE2, s:0.45, x:0.8,  y:-0.8, z:0.8}, // Na
+            
+            // Back face
+            {c:0x00ff00, s:0.6,  x:-0.8, y:0.8, z:-0.8}, // Cl
+            {c:0x8A2BE2, s:0.45, x:0.8,  y:0.8, z:-0.8}, // Na
+            {c:0x8A2BE2, s:0.45, x:-0.8, y:-0.8, z:-0.8},// Na
+            {c:0x00ff00, s:0.6,  x:0.8,  y:-0.8, z:-0.8} // Cl
+        ];
 
+        const naclBonds = [
+            {f:0, t:1}, {f:1, t:3}, {f:3, t:2}, {f:2, t:0}, // Front square
+            {f:4, t:5}, {f:5, t:7}, {f:7, t:6}, {f:6, t:4}, // Back square
+            {f:0, t:4}, {f:1, t:5}, {f:2, t:6}, {f:3, t:7}  // Connecting lines
+        ];
+
+        create3DScene('nacl-canvas', naclAtoms, naclBonds, 6);
         // Search Functionality
         function startSearch() {
             const val = document.getElementById('main-search').value;

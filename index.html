@@ -148,7 +148,13 @@
         </div>
         <div id="koh-box" class="canvas-3d"></div>
  </div>
-    
+    <div class="molecule-entry">
+        <div class="molecule-title">Nitric Acid (HNO3)</div>
+        <div class="knowledge-box">
+            A highly corrosive mineral acid. It is used in the production of fertilizers and explosives.
+        </div>
+        <div id="hno3-box" class="canvas-3d"></div>
+    </div>
     <script>
     // --- CORE 3D ENGINE ---
     function renderMolecule(id, atoms, bonds, isIonic = false, zoom = 5) {
@@ -245,6 +251,20 @@
     ];
     // Bond only O to H (covalent part). K is held next to it (ionic).
     renderMolecule('koh-box', kohAtoms, [{f:1, t:2}], false, 5);
+           // 9. Nitric Acid (HNO3)
+    // Nitrogen is Blue (0x0000ff), Oxygen is Red, Hydrogen is White
+    const hno3Atoms = [
+        {c:0x0000ff, s:0.55, x:0, y:0, z:0},    // Nitrogen (0)
+        {c:0xff0000, s:0.5, x:0, y:1.2, z:0},   // Oxygen top (1)
+        {c:0xff0000, s:0.5, x:1.1, y:-0.6, z:0},// Oxygen bottom-right (2)
+        {c:0xff0000, s:0.5, x:-1.1, y:-0.6, z:0},// Oxygen bottom-left (3)
+        {c:0xeeeeee, s:0.25, x:-1.8, y:-0.2, z:0}// Hydrogen (on O3)
+    ];
+    const hno3Bonds = [
+        {f:0, t:1}, {f:0, t:2}, {f:0, t:3}, // N to all O's
+        {f:3, t:4} // O to H
+    ];
+    renderMolecule('hno3-box', hno3Atoms, hno3Bonds, false, 6);
         
     function searchMolecule() { alert("Search: " + document.getElementById('mol-search').value); }
         </script>

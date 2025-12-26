@@ -2,157 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Molecular Wiki</title>
-    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
-    
+    <title>Chemistry Wiki - 3D Bonds</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
             display: flex;
             flex-direction: column;
             align-items: center;
+            background-color: white;
             padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
         }
 
+        /* Banner from your sketch */
         .banner {
-            width: 100%;
-            max-width: 800px;
-            height: 150px;
-            background: #2c3e50;
-            color: white;
+            width: 550px;
+            height: 180px;
+            border: 4px solid black;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 80px;
+            margin-bottom: 30px;
         }
 
-        .search-container {
-            width: 100%;
-            max-width: 800px;
-            margin-bottom: 20px;
+        /* Search Box from your sketch */
+        .search-box {
+            width: 550px;
+            height: 35px;
+            border: 3px solid black;
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 30px;
         }
 
-        input {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.2rem;
-            border: 2px solid #ddd;
-            border-radius: 30px;
-            outline: none;
-            box-sizing: border-box;
+        .molecule-section {
+            width: 550px;
+            margin-bottom: 40px;
         }
 
-        .card {
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
+        .label { font-weight: bold; margin-bottom: 5px; }
 
+        /* Knowledge box from your sketch */
         .knowledge-box {
-            border: 1px solid #eee;
-            padding: 15px;
-            background: #fafafa;
-            border-radius: 5px;
+            width: 300px;
+            height: 50px;
+            border: 3px solid black;
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            font-size: 28px;
             margin-bottom: 15px;
-            line-height: 1.6;
         }
 
-        /* This is the gray box from your sketch */
-        #molecule-viewer {
-            width: 100%;
-            height: 400px;
-            background-color: #333;
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
+        /* The 3D viewer (Gray box) */
+        .viewer-3d {
+            width: 420px;
+            height: 200px;
+            background-color: #808080;
+            border: 3px solid black;
         }
-
-        h2 { color: #2c3e50; margin-top: 0; }
-        b { color: #e74c3c; }
     </style>
 </head>
 <body>
 
-    <div class="banner">MOLECULAR WIKI</div>
+    <div class="banner">Banner</div>
+    <div class="search-box">SEARCH BOX</div>
 
-    <div class="search-container">
-        <input type="text" id="mol-search" placeholder="Type formula (e.g., H2O, HCl, Caffeine, Benzene)..." onkeypress="handleSearch(event)">
+    <div class="molecule-section">
+        <div class="label">HCL (Hydrochloric Acid)</div>
+        <div class="knowledge-box">Knowledge</div>
+        <div id="hcl-container" class="viewer-3d"></div>
     </div>
 
-    <div class="card">
-        <h2 id="mol-name">Welcome</h2>
-        <div class="knowledge-box" id="mol-info">
-            Enter a chemical formula or name above and press <b>Enter</b> to see its 3D structure and properties.
-        </div>
-        
-        <div id="molecule-viewer" class="viewer_3dmoljs" data-backgroundcolor="0x222222" data-style="stick"></div>
+    <div class="molecule-section">
+        <div class="label">H20 (Water)</div>
+        <div class="knowledge-box) ">Knowledge</div>
+        <div id="h2o-container" class="viewer-3d"></div>
     </div>
 
     <script>
-        // This function runs when you press Enter in the search box
-        function handleSearch(event) {
-            if (event.key === "Enter") {
-                const query = document.getElementById('mol-search').value;
-                searchMolecule(query);
+        function initScene(containerId, atoms, bonds) {
+            const container = document.getElementById(containerId);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setClearColor(0x808080);
+            container.appendChild(renderer.domElement);
+
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(10, 10, 10);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+            // Create Spheres (Atoms)
+            atoms.forEach(a => {
+                const geom = new THREE.SphereGeometry(a.size, 32, 32);
+                const mat = new THREE.MeshPhongMaterial({ color: a.color });
+                const sphere = new THREE.Mesh(geom, mat);
+                sphere.position.set(a.x, a.y, a.z);
+                scene.add(sphere);
+            });
+
+            // Create Cylinders (Bonds)
+            bonds.forEach(b => {
+                const start = new THREE.Vector3(atoms[b.from].x, atoms[b.from].y, atoms[b.from].z);
+                const end = new THREE.Vector3(atoms[b.to].x, atoms[b.to].y, atoms[b.to].z);
+                const distance = start.distanceTo(end);
+                
+                const cylinderGeom = new THREE.CylinderGeometry(0.1, 0.1, distance, 16);
+                const cylinderMat = new THREE.MeshPhongMaterial({ color: 0xffffff }); // White bonds
+                const cylinder = new THREE.Mesh(cylinderGeom, cylinderMat);
+
+                // Position and Rotate the cylinder to connect the two spheres
+                const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+                cylinder.position.copy(midpoint);
+                cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+                
+                scene.add(cylinder);
+            });
+
+            camera.position.z = 5;
+            function animate() {
+                requestAnimationFrame(animate);
+                scene.rotation.y += 0.01;
+                renderer.render(scene, camera);
             }
+            animate();
         }
 
-        function searchMolecule(name) {
-            const infoBox = document.getElementById('mol-info');
-            const nameTitle = document.getElementById('mol-name');
-            const viewerElement = $('#molecule-viewer'); // Use jQuery-style selector for 3Dmol
+        // Setup HCl (Red Cl, Green H)
+        initScene('hcl-container', 
+            [{color: 0xff0000, size: 0.7, x: -0.8, y: 0, z: 0}, {color: 0x00ff00, size: 0.5, x: 0.8, y: 0, z: 0}], 
+            [{from: 0, to: 1}]
+        );
 
-            // 1. Fetch data from PubChem (a free science database)
-            const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${name}/JSON`;
-
-            infoBox.innerHTML = "Searching database...";
-
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) throw new Error("Molecule not found");
-                    return response.json();
-                })
-                .then(data => {
-                    const compound = data.PC_Compounds[0];
-                    const cid = compound.id.id.cid;
-                    
-                    // Display some basic "Knowledge" info
-                    nameTitle.innerText = name.toUpperCase();
-                    infoBox.innerHTML = `
-                        <b>CID:</b> ${cid}<br>
-                        <b>Formula:</b> ${name}<br>
-                        <b>Source:</b> PubChem Open Database
-                    `;
-
-                    // 2. Load the 3D structure into the viewer
-                    // We clear the old one first
-                    viewerElement.empty();
-                    const viewer = $3Dmol.createViewer(viewerElement, { backgroundColor: '#333' });
-                    
-                    // Fetch 3D coordinates from PubChem
-                    const molUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type=3d`;
-                    
-                    $.get(molUrl, function(data) {
-                        viewer.addModel(data, "sdf");
-                        viewer.setStyle({}, {sphere: {scale: 0.3}, stick: {radius: 0.15}}); // Ball and Stick style
-                        viewer.zoomTo();
-                        viewer.render();
-                    });
-                })
-                .catch(error => {
-                    infoBox.innerHTML = "Error: Could not find that molecule. Try 'Water', 'HCl', or 'Glucose'.";
-                });
-        }
+        // Setup H2O (Green O, Blue H)
+        initScene('h2o-container', 
+            [
+                {color: 0x00ff00, size: 0.6, x: 0, y: 0.4, z: 0},    // Oxygen
+                {color: 0x0000ff, size: 0.4, x: -0.8, y: -0.4, z: 0}, // Hydrogen
+                {color: 0x0000ff, size: 0.4, x: 0.8, y: -0.4, z: 0}   // Hydrogen
+            ], 
+            [{from: 0, to: 1}, {from: 0, to: 2}]
+        );
     </script>
-
 </body>
 </html>

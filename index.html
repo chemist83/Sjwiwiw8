@@ -2,20 +2,82 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Molecular Wiki - Full Glucose & Search</title>
+    <title>Molecular Wiki - Full Project</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { display: flex; flex-direction: column; align-items: center; background-color: white; padding: 20px; font-family: sans-serif; }
-        .banner { width: 550px; height: 160px; border: 4px solid black; display: flex; justify-content: center; align-items: center; font-size: 70px; margin-bottom: 30px; }
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background-color: white; 
+            padding: 40px; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
         
-        /* Fixed Search Box */
-        .search-box { width: 550px; height: 45px; border: 3px solid black; margin-bottom: 30px; overflow: hidden; }
-        .search-box input { width: 100%; height: 100%; border: none; text-align: center; font-size: 20px; font-weight: bold; outline: none; }
+        /* 1. The Banner from your sketch */
+        .banner { 
+            width: 600px; 
+            height: 180px; 
+            border: 4px solid black; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 80px; 
+            margin-bottom: 40px; 
+            font-weight: bold;
+        }
 
-        .molecule-section { width: 550px; margin-bottom: 40px; }
-        .label { font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
-        .knowledge-box { width: 300px; height: 50px; border: 3px solid black; margin-bottom: 15px; background: white; }
-        .viewer-3d { width: 500px; height: 250px; background-color: #808080; border: 3px solid black; }
+        /* 2. The Search Box from your sketch */
+        .search-box { 
+            width: 550px; 
+            height: 45px; 
+            border: 3px solid black; 
+            margin-bottom: 50px; 
+            background: white;
+        }
+        .search-box input { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            text-align: center; 
+            font-size: 22px; 
+            font-weight: bold; 
+            outline: none; 
+            text-transform: uppercase; 
+        }
+
+        /* Molecule Section Layout */
+        .molecule-section { 
+            width: 550px; 
+            margin-bottom: 60px; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        .label { 
+            font-weight: bold; 
+            font-size: 22px; 
+            margin-bottom: 10px; 
+        }
+        
+        /* 3. Empty "Knowledge" gaps from your sketch */
+        .knowledge-box { 
+            width: 320px; 
+            height: 55px; 
+            border: 3px solid black; 
+            margin-bottom: 20px; 
+            background: white; 
+        }
+
+        /* 4. The 3D Viewer (Gray Box) */
+        .viewer-3d { 
+            width: 500px; 
+            height: 300px; 
+            background-color: #808080; 
+            border: 3px solid black; 
+            cursor: move;
+        }
+        
+        #dynamic-results { width: 100%; display: flex; flex-direction: column; align-items: center; }
     </style>
 </head>
 <body>
@@ -23,153 +85,153 @@
     <div class="banner">Banner</div>
 
     <div class="search-box">
-        <input type="text" id="main-search" placeholder="TYPE HERE & PRESS ENTER" onkeydown="if(event.key==='Enter') startSearch()">
+        <input type="text" id="user-search" placeholder="SEARCH BOX" onkeydown="if(event.key==='Enter') executeSearch()">
     </div>
 
     <div class="molecule-section">
         <div class="label">HCL (Hydrochloric Acid)</div>
         <div class="knowledge-box"></div>
-        <div id="hcl-container" class="viewer-3d"></div>
+        <div id="hcl-canvas" class="viewer-3d"></div>
     </div>
 
     <div class="molecule-section">
         <div class="label">H20 (Water)</div>
         <div class="knowledge-box"></div>
-        <div id="h2o-container" class="viewer-3d"></div>
+        <div id="h2o-canvas" class="viewer-3d"></div>
     </div>
 
     <div class="molecule-section">
         <div class="label">Glucose (C6H12O6)</div>
         <div class="knowledge-box"></div>
-        <div id="glucose-container" class="viewer-3d"></div>
+        <div id="glucose-canvas" class="viewer-3d"></div>
     </div>
 
-<div class="molecule-section">
-    <div class="label">NaCl (Sodium Chloride)</div>
-    <div class="knowledge-box"></div>
-    <div id="nacl-canvas" class="viewer-3d"></div>
-</div>
-    
-<script>
-    // --- CORE 3D ENGINE ---
-    // This function builds the molecules using Three.js
-    function create3DScene(containerId, atoms, bonds, zoom = 5) {
-        const container = document.getElementById(containerId);
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setClearColor(0x808080); // The gray background from your sketch
-        container.appendChild(renderer.domElement);
+    <div class="molecule-section">
+        <div class="label">NaCl (Sodium Chloride)</div>
+        <div class="knowledge-box"></div>
+        <div id="nacl-canvas" class="viewer-3d"></div>
+    </div>
 
-        // Lighting to make the spheres look 3D
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const light = new THREE.PointLight(0xffffff, 1);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+    <div id="dynamic-results"></div>
 
-        // Create Atoms (Spheres)
-        atoms.forEach(a => {
-            const sphere = new THREE.Mesh(
-                new THREE.SphereGeometry(a.s, 32, 32),
-                new THREE.MeshPhongMaterial({ color: a.c })
-            );
-            sphere.position.set(a.x, a.y, a.z);
-            scene.add(sphere);
-        });
-
-        // Create Bonds (Cylinders)
-        bonds.forEach(b => {
-            const start = new THREE.Vector3(atoms[b.f].x, atoms[b.f].y, atoms[b.f].z);
-            const end = new THREE.Vector3(atoms[b.t].x, atoms[b.t].y, atoms[b.t].z);
-            const distance = start.distanceTo(end);
+    <script>
+        // --- 3D RENDER ENGINE ---
+        function create3DScene(containerId, atoms, bonds, zoom = 5) {
+            const container = document.getElementById(containerId);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
             
-            // "Cylindrine" bond
-            const cylinder = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.08, 0.08, distance, 16),
-                new THREE.MeshPhongMaterial({ color: 0xffffff }) // White bonds
-            );
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setClearColor(0x808080); 
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const light = new THREE.PointLight(0xffffff, 1);
+            light.position.set(10, 10, 10);
+            scene.add(light);
+
+            // Create Atom Spheres
+            atoms.forEach(a => {
+                const sphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(a.s, 32, 32),
+                    new THREE.MeshPhongMaterial({ color: a.c })
+                );
+                sphere.position.set(a.x, a.y, a.z);
+                scene.add(sphere);
+            });
+
+            // Create Cylinder Bonds (Cylindrines)
+            bonds.forEach(b => {
+                const start = new THREE.Vector3(atoms[b.f].x, atoms[b.f].y, atoms[b.f].z);
+                const end = new THREE.Vector3(atoms[b.t].x, atoms[b.t].y, atoms[b.t].z);
+                const distance = start.distanceTo(end);
+                
+                const cylinder = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, distance, 16),
+                    new THREE.MeshPhongMaterial({ color: 0xffffff }) 
+                );
+                
+                cylinder.position.copy(start.clone().lerp(end, 0.5));
+                cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+                scene.add(cylinder);
+            });
+
+            camera.position.z = zoom;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                scene.rotation.y += 0.01; // Auto-rotate
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // --- SUBSTANCE DATA ---
+
+        // 1. HCl: Red Cl, Green H
+        create3DScene('hcl-canvas', 
+            [{c:0xff0000, s:0.7, x:-1, y:0, z:0}, {c:0x00ff00, s:0.5, x:1, y:0, z:0}], 
+            [{f:0, t:1}]
+        );
+
+        // 2. H2O: Green O, Blue H
+        create3DScene('h2o-canvas', 
+            [{c:0x00ff00, s:0.6, x:0, y:0.5, z:0}, {c:0x0000ff, s:0.4, x:-0.8, y:-0.5, z:0}, {c:0x0000ff, s:0.4, x:0.8, y:-0.5, z:0}], 
+            [{f:0, t:1}, {f:0, t:2}]
+        );
+
+        // 3. Glucose (C6H12O6): 6 Carbons, 6 Oxygens, 12 Hydrogens
+        const glucoseAtoms = [
+            // 6 Carbons (Dark Gray)
+            {c:0x333333, s:0.5, x:1, y:0, z:0}, {c:0x333333, s:0.5, x:0.5, y:0.8, z:0.5}, {c:0x333333, s:0.5, x:-0.5, y:0.8, z:0.5},
+            {c:0x333333, s:0.5, x:-1, y:0, z:0}, {c:0x333333, s:0.5, x:-0.5, y:-0.8, z:-0.5}, {c:0x333333, s:0.5, x:0.5, y:-0.8, z:-0.5},
+            // 6 Oxygens (Red)
+            {c:0xff0000, s:0.4, x:2, y:0, z:0}, {c:0xff0000, s:0.4, x:1, y:1.5, z:1}, {c:0xff0000, s:0.4, x:-1, y:1.5, z:1},
+            {c:0xff0000, s:0.4, x:-2, y:0, z:0}, {c:0xff0000, s:0.4, x:-1, y:-1.5, z:-1}, {c:0xff0000, s:0.4, x:1, y:-1.5, z:-1},
+            // 12 Hydrogens (White)
+            {c:0xeeeeee, s:0.25, x:1, y:0.5, z:-0.5}, {c:0xeeeeee, s:0.25, x:2.5, y:0.5, z:0}, {c:0xeeeeee, s:0.25, x:0.5, y:1.2, z:-0.2},
+            {c:0xeeeeee, s:0.25, x:1.5, y:2, z:1}, {c:0xeeeeee, s:0.25, x:-0.5, y:1.2, z:-0.2}, {c:0xeeeeee, s:0.25, x:-1.5, y:2, z:1},
+            {c:0xeeeeee, s:0.25, x:-1, y:0.5, z:0.5}, {c:0xeeeeee, s:0.25, x:-2.5, y:0.5, z:0}, {c:0xeeeeee, s:0.25, x:-0.5, y:-1.2, z:0.2},
+            {c:0xeeeeee, s:0.25, x:-1.5, y:-2, z:-1}, {c:0xeeeeee, s:0.25, x:0.5, y:-1.2, z:0.2}, {c:0xeeeeee, s:0.25, x:1.5, y:-2, z:-1}
+        ];
+        const glucoseBonds = [
+            {f:0,t:1},{f:1,t:2},{f:2,t:3},{f:3,t:4},{f:4,t:5},{f:5,t:0}, // Ring
+            {f:0,t:6},{f:1,t:7},{f:2,t:8},{f:3,t:9},{f:4,t:10},{f:5,t:11} // Extensions
+        ];
+        create3DScene('glucose-canvas', glucoseAtoms, glucoseBonds, 8);
+
+        // 4. NaCl: Purple Na, Green Cl
+        const naclAtoms = [
+            {c:0x8A2BE2, s:0.45, x:-0.8, y:0.8, z:0.8},  {c:0x00ff00, s:0.6, x:0.8, y:0.8, z:0.8}, 
+            {c:0x00ff00, s:0.6, x:-0.8, y:-0.8, z:0.8}, {c:0x8A2BE2, s:0.45, x:0.8, y:-0.8, z:0.8},
+            {c:0x00ff00, s:0.6, x:-0.8, y:0.8, z:-0.8}, {c:0x8A2BE2, s:0.45, x:0.8, y:0.8, z:-0.8},
+            {c:0x8A2BE2, s:0.45, x:-0.8, y:-0.8, z:-0.8},{c:0x00ff00, s:0.6, x:0.8, y:-0.8, z:-0.8}
+        ];
+        const naclBonds = [
+            {f:0, t:1}, {f:1, t:3}, {f:3, t:2}, {f:2, t:0},
+            {f:4, t:5}, {f:5, t:7}, {f:7, t:6}, {f:6, t:4},
+            {f:0, t:4}, {f:1, t:5}, {f:2, t:6}, {f:3, t:7}
+        ];
+        create3DScene('nacl-canvas', naclAtoms, naclBonds, 6);
+
+        // --- SEARCH FUNCTION ---
+        let count = 0;
+        function executeSearch() {
+            const query = document.getElementById('user-search').value;
+            if(!query) return;
             
-            // Position and rotate the cylinder to connect the spheres
-            cylinder.position.copy(start.clone().lerp(end, 0.5));
-            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
-            scene.add(cylinder);
-        });
-
-        camera.position.z = zoom;
-
-        // Animation Loop (Slow rotation)
-        function animate() {
-            requestAnimationFrame(animate);
-            scene.rotation.y += 0.01;
-            renderer.render(scene, camera);
+            count++;
+            const id = 'search-' + count;
+            const section = document.createElement('div');
+            section.className = 'molecule-section';
+            section.innerHTML = `<div class="label">Result: ${query.toUpperCase()}</div><div class="knowledge-box"></div><div id="${id}" class="viewer-3d"></div>`;
+            document.getElementById('dynamic-results').appendChild(section);
+            
+            // Render a generic "New Molecule" for search results
+            create3DScene(id, [{c:0xffffff, s:0.6, x:0, y:0, z:0}, {c:0x333333, s:0.4, x:1, y:1, z:0}], [{f:0, t:1}]);
+            document.getElementById('user-search').value = "";
         }
-        animate();
-    }
-
-    // --- 1. HCl (Hydrochloric Acid) ---
-    // Red Chlorine and Green Hydrogen
-    create3DScene('hcl-canvas', 
-        [{c:0xff0000, s:0.7, x:-1, y:0, z:0}, {c:0x00ff00, s:0.5, x:1, y:0, z:0}], 
-        [{f:0, t:1}]
-    );
-
-    // --- 2. H2O (Water) ---
-    // Green Oxygen and Blue Hydrogens in a bent "V" shape
-    create3DScene('h2o-canvas', 
-        [
-            {c:0x00ff00, s:0.6, x:0, y:0.5, z:0}, 
-            {c:0x0000ff, s:0.4, x:-0.8, y:-0.5, z:0}, 
-            {c:0x0000ff, s:0.4, x:0.8, y:-0.5, z:0}
-        ], 
-        [{f:0, t:1}, {f:0, t:2}]
-    );
-
-    // --- 3. GLUCOSE (C6H12O6) ---
-    // Full structure with 6 Carbons (Dark), 6 Oxygens (Red), and 12 Hydrogens (White)
-    const glucoseAtoms = [
-        // 6 Carbons
-        {c:0x333333, s:0.5, x:1, y:0, z:0}, {c:0x333333, s:0.5, x:0.5, y:0.8, z:0.5}, {c:0x333333, s:0.5, x:-0.5, y:0.8, z:0.5},
-        {c:0x333333, s:0.5, x:-1, y:0, z:0}, {c:0x333333, s:0.5, x:-0.5, y:-0.8, z:-0.5}, {c:0x333333, s:0.5, x:0.5, y:-0.8, z:-0.5},
-        // 6 Oxygens
-        {c:0xff0000, s:0.4, x:2, y:0, z:0}, {c:0xff0000, s:0.4, x:1, y:1.5, z:1}, {c:0xff0000, s:0.4, x:-1, y:1.5, z:1},
-        {c:0xff0000, s:0.4, x:-2, y:0, z:0}, {c:0xff0000, s:0.4, x:-1, y:-1.5, z:-1}, {c:0xff0000, s:0.4, x:1, y:-1.5, z:-1},
-        // 12 Hydrogens
-        {c:0xeeeeee, s:0.25, x:1, y:0.5, z:-0.5}, {c:0xeeeeee, s:0.25, x:2.5, y:0.5, z:0}, {c:0xeeeeee, s:0.25, x:0.5, y:1.2, z:-0.2},
-        {c:0xeeeeee, s:0.25, x:1.5, y:2, z:1}, {c:0xeeeeee, s:0.25, x:-0.5, y:1.2, z:-0.2}, {c:0xeeeeee, s:0.25, x:-1.5, y:2, z:1},
-        {c:0xeeeeee, s:0.25, x:-1, y:0.5, z:0.5}, {c:0xeeeeee, s:0.25, x:-2.5, y:0.5, z:0}, {c:0xeeeeee, s:0.25, x:-0.5, y:-1.2, z:0.2},
-        {c:0xeeeeee, s:0.25, x:-1.5, y:-2, z:-1}, {c:0xeeeeee, s:0.25, x:0.5, y:-1.2, z:0.2}, {c:0xeeeeee, s:0.25, x:1.5, y:-2, z:-1}
-    ];
-    const glucoseBonds = [
-        {f:0,t:1},{f:1,t:2},{f:2,t:3},{f:3,t:4},{f:4,t:5},{f:5,t:0}, // Ring
-        {f:0,t:6},{f:1,t:7},{f:2,t:8},{f:3,t:9},{f:4,t:10},{f:5,t:11} // Connections
-    ];
-    create3DScene('glucose-canvas', glucoseAtoms, glucoseBonds, 8);
-
-    // --- 4. NaCl (Sodium Chloride) ---
-    // Cubic lattice with Purple Sodium and Green Chlorine
-    const naclAtoms = [
-        {c:0x8A2BE2, s:0.45, x:-0.8, y:0.8, z:0.8},  {c:0x00ff00, s:0.6, x:0.8, y:0.8, z:0.8}, 
-        {c:0x00ff00, s:0.6, x:-0.8, y:-0.8, z:0.8}, {c:0x8A2BE2, s:0.45, x:0.8, y:-0.8, z:0.8},
-        {c:0x00ff00, s:0.6, x:-0.8, y:0.8, z:-0.8}, {c:0x8A2BE2, s:0.45, x:0.8, y:0.8, z:-0.8},
-        {c:0x8A2BE2, s:0.45, x:-0.8, y:-0.8, z:-0.8},{c:0x00ff00, s:0.6, x:0.8, y:-0.8, z:-0.8}
-    ];
-    const naclBonds = [
-        {f:0, t:1}, {f:1, t:3}, {f:3, t:2}, {f:2, t:0},
-        {f:4, t:5}, {f:5, t:7}, {f:7, t:6}, {f:6, t:4},
-        {f:0, t:4}, {f:1, t:5}, {f:2, t:6}, {f:3, t:7}
-    ];
-    create3DScene('nacl-canvas', naclAtoms, naclBonds, 6);
-
-    // --- SEARCH FUNCTION ---
-    function executeSearch() {
-        const query = document.getElementById('user-search').value;
-        if(query) {
-            alert("Searching for " + query + ". This will generate a new 3D model below!");
-            // You can add logic here to create more boxes dynamically!
-        }
-    }
-</script>
+    </script>
 </body>
 </html>

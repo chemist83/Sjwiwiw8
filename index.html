@@ -141,6 +141,13 @@
         </div>
         <div id="h2so4-box" class="canvas-3d"></div>
       </div>
+ <div class="molecule-entry">
+        <div class="molecule-title">Potassium Hydroxide (KOH)</div>
+        <div class="knowledge-box">
+            A strong inorganic base. Like NaOH, it features an ionic bond between the metal cation (K+) and the hydroxyl anion (OH-).
+        </div>
+        <div id="koh-box" class="canvas-3d"></div>
+ </div>
     
     <script>
     // --- CORE 3D ENGINE ---
@@ -229,6 +236,16 @@
     ];
     renderMolecule('h2so4-box', h2so4Atoms, h2so4Bonds, false, 7);
 
+// 8. Potassium Hydroxide (KOH)
+    // Potassium is often represented as Violet/Light Purple (0xc381fd)
+    const kohAtoms = [
+        {c:0xc381fd, s:0.7, x:-0.7, y:0, z:0},  // K+ (Potassium)
+        {c:0xff0000, s:0.65, x:0.7, y:0, z:0},  // O (Oxygen)
+        {c:0xeeeeee, s:0.35, x:1.4, y:0, z:0}   // H (Hydrogen)
+    ];
+    // Bond only O to H (covalent part). K is held next to it (ionic).
+    renderMolecule('koh-box', kohAtoms, [{f:1, t:2}], false, 5);
+        
     function searchMolecule() { alert("Search: " + document.getElementById('mol-search').value); }
         </script>
 </body>

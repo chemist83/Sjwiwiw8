@@ -78,12 +78,24 @@
             height: 300px; 
             background-color: #808080; 
             border: 3px solid black; 
+
+            .molecule-entry { 
+    /* ... keep your existing code ... */
+    transition: opacity 0.3s ease;
+}
+
+/* This class helps the 3D renderer ignore hidden boxes */
+.molecule-entry[style*="display: none"] {
+    opacity: 0;
+}
         }
     </style>
 </head>
 <body>
 
-    <div class="banner">Banner</div>
+    <div class="banner">
+    <img src="https://via.placeholder.com/600x180?text=MOLECULAR+WIKI" alt="Banner" style="width:100%; height:100%; object-fit:cover;">
+    </div>
 
     <div class="search-container">
         <input type="text" id="mol-search" placeholder="SEARCH BOX" onkeydown="if(event.key==='Enter') searchMolecule()">
@@ -307,7 +319,24 @@
     }
 
     window.onload = init;
-    function searchMolecule() { alert("Search: " + document.getElementById('mol-search').value); }
-        </script>
+    function searchMolecule() {
+    const input = document.getElementById('mol-search').value.toLowerCase();
+    const entries = document.getElementsByClassName('molecule-entry');
+
+    for (let i = 0; i < entries.length; i++) {
+        const title = entries[i].getElementsByClassName('molecule-title')[0].innerText.toLowerCase();
+        const info = entries[i].getElementsByClassName('knowledge-box')[0].innerText.toLowerCase();
+        
+        // If the title or the info text contains the search word, show it
+        if (title.includes(input) || info.includes(input)) {
+            entries[i].style.display = "flex";
+        } else {
+            entries[i].style.display = "none";
+        }
+    }
+}
+
+// Also, let's make it search instantly as you type instead of just pressing Enter
+document.getElementById('mol-search').addEventListener('input', searchMolecule);  </script>
  </body>
 </html>
